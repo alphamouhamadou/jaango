@@ -14,10 +14,14 @@ export async function POST() {
 
 async function createAdmin() {
   try {
+    console.log('Starting createAdmin...');
+    
     // Check if admin already exists
     const existingAdmin = await db.user.findFirst({
       where: { role: 'ADMIN' }
     });
+    
+    console.log('Existing admin check:', existingAdmin);
     
     if (existingAdmin) {
       return NextResponse.json(
@@ -32,8 +36,11 @@ async function createAdmin() {
     }
     
     // Create admin account with the specified phone number
+    console.log('Hashing password...');
     const hashedPassword = await hashPassword('Admin123!');
+    console.log('Password hashed:', hashedPassword ? 'OK' : 'FAILED');
     
+    console.log('Creating admin in database...');
     const admin = await db.user.create({
       data: {
         prenom: 'Admin',
@@ -48,6 +55,8 @@ async function createAdmin() {
       }
     });
     
+    console.log('Admin created:', admin.id);
+    
     return NextResponse.json({
       success: true,
       message: '✅ Compte admin créé avec succès !',
@@ -58,10 +67,17 @@ async function createAdmin() {
       loginUrl: 'https://jaango.vercel.app/connexion'
     });
     
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Create admin error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    
     return NextResponse.json(
-      { error: 'Une erreur est survenue lors de la création du compte admin' },
+      { 
+        error: 'Une erreur est survenue lors de la création du compte admin',
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }
