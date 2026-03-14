@@ -74,7 +74,7 @@ async function createAdmin() {
     
     return NextResponse.json(
       { 
-        error: 'Une erreur est survenue lors de la création du compte admin',
+        error: 'Une erreur est survenue lors de la création du compte admin.',
         details: errorMessage,
         stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
       },
