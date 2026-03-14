@@ -1,0 +1,197 @@
+// Prisma schema for SQLite (local development)
+// Rename this file to schema.prisma for local development with SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  prenom        String
+  nom           String
+  telephone     String   @unique
+  adresse       String
+  numeroCNI     String   @unique
+  dateNaissance DateTime
+  password      String
+  role          Role     @default(USER)
+  statut        StatutUser @default(ACTIF)
+  demandes      DemandePret[]
+  remboursements Remboursement[]
+  notifications  Notification[]
+  transactions   Transaction[]
+  pushSubscriptions PushSubscription[]
+  notificationSettings NotificationSettings?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum StatutUser {
+  ACTIF
+  SUSPENDU
+}
+
+model DemandePret {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  typePret        TypePret
+  montant         Float
+  avance          Float
+  statut          StatutDemande @default(EN_ATTENTE)
+  membres         Membre[]
+  remboursements  Remboursement[]
+  transactions    Transaction[]
+  dateDecaissement DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum TypePret {
+  SILVER
+  GOLD
+}
+
+enum StatutDemande {
+  EN_ATTENTE
+  PAYE_AVANCE
+  VALIDEE
+  DECAISSE
+  REMBOURSE
+  REJETEE
+}
+
+model Membre {
+  id            String      @id @default(cuid())
+  demandePretId String
+  demandePret   DemandePret @relation(fields: [demandePretId], references: [id])
+  prenom        String
+  nom           String
+  dateNaissance DateTime
+  numeroCNI     String
+  telephone     String
+  adresse       String
+  createdAt     DateTime    @default(now())
+}
+
+model Remboursement {
+  id            String       @id @default(cuid())
+  demandePretId String
+  demandePret   DemandePret  @relation(fields: [demandePretId], references: [id])
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  montant       Float
+  dateEcheance  DateTime
+  datePaiement  DateTime?
+  statut        StatutRemb   @default(EN_ATTENTE)
+  transactions  Transaction[]
+  createdAt     DateTime     @default(now())
+}
+
+enum StatutRemb {
+  EN_ATTENTE
+  PAYE
+  RETARD
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  type        NotificationType
+  titre       String
+  message     String
+  lu          Boolean          @default(false)
+  lien        String?
+  createdAt   DateTime         @default(now())
+}
+
+enum NotificationType {
+  ECHEANCE
+  VALIDATION
+  REJET
+  DECAISSEMENT
+  REMBOURSEMENT
+  SYSTEME
+  PAIEMENT
+}
+
+model Transaction {
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+  remboursementId   String?
+  remboursement     Remboursement?      @relation(fields: [remboursementId], references: [id])
+  demandePretId     String?
+  demandePret       DemandePret?        @relation(fields: [demandePretId], references: [id])
+  type              TypeTransaction
+  montant           Float
+  frais             Float              @default(0)
+  provider          PaymentProvider
+  reference         String             @unique
+  providerReference String?
+  statut            StatutTransaction  @default(EN_ATTENTE)
+  telephone         String
+  message           String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+enum TypeTransaction {
+  AVANCE
+  REMBOURSEMENT
+  REMBOURSEMENT_AUTRE
+}
+
+enum PaymentProvider {
+  PAYTECH
+  ORANGE_MONEY
+  WAVE
+  FREE_MONEY
+}
+
+enum StatutTransaction {
+  EN_ATTENTE
+  SUCCESS
+  ECHEC
+  ANNULE
+  REMBOURSE
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationSettings {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id])
+  pushEnabled         Boolean  @default(false)
+  echeanceEnabled     Boolean  @default(true)
+  validationEnabled   Boolean  @default(true)
+  rejetEnabled        Boolean  @default(true)
+  decaissementEnabled Boolean  @default(true)
+  remboursementEnabled Boolean @default(true)
+  paiementEnabled     Boolean  @default(true)
+  systemeEnabled      Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
