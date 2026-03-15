@@ -31,7 +31,8 @@ import {
   Bell,
   History,
   FileText,
-  Home
+  Home,
+  Users
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { formatFCFA, formatDate, formatDateShort, getStatutDemandeLabel, getStatutDemandeColor, getStatutRembLabel, getStatutRembColor, getTypePretLabel } from '@/lib/helpers';
@@ -363,6 +364,60 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Groupes Section */}
+        <Card className="mb-8 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Groupes Solidaires
+                </CardTitle>
+                <CardDescription>
+                  Rejoignez un groupe de 10 femmes pour accéder aux financements communautaires
+                </CardDescription>
+              </div>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                <Link href="/groupes">
+                  Voir les groupes
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Groupes disponibles</p>
+                  <p className="font-semibold">5 niveaux</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Prêts de</p>
+                  <p className="font-semibold">1M à 3M FCFA</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg">
+                <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Épargne mensuelle</p>
+                  <p className="font-semibold">5 000 FCFA/membre</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">

@@ -2,16 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, History, Plus, FileText, User } from 'lucide-react';
+import { Home, Users, Plus, FileText, User } from 'lucide-react';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Accueil' },
-    { href: '/historique', icon: History, label: 'Historique' },
-    { href: '/demande', icon: Plus, label: 'Nouveau', isMain: true },
-    { href: '/transactions', icon: FileText, label: 'Transactions' },
+    { href: '/groupes', icon: Users, label: 'Groupes' },
+    { href: '/groupes/nouveau', icon: Plus, label: 'Nouveau', isMain: true },
+    { href: '/historique', icon: FileText, label: 'Historique' },
     { href: '/profil', icon: User, label: 'Profil' },
   ];
 

@@ -1,4 +1,5 @@
 // This is your Prisma schema file for Jaango - Community Loan Management Platform
+// Système de financement communautaire - Groupes solidaires de 10 femmes
 
 generator client {
   provider = "prisma-client-js"
@@ -9,25 +10,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== UTILISATEURS ====================
+
 model User {
-  id            String   @id @default(cuid())
+  id            String     @id @default(cuid())
   prenom        String
   nom           String
-  telephone     String   @unique
+  telephone     String     @unique
   adresse       String
-  numeroCNI     String   @unique
+  numeroCNI     String     @unique
   dateNaissance DateTime
   password      String
-  role          Role     @default(USER)
+  role          Role       @default(USER)
   statut        StatutUser @default(ACTIF)
-  demandes      DemandePret[]
-  remboursements Remboursement[]
-  notifications  Notification[]
-  transactions   Transaction[]
-  pushSubscriptions PushSubscription[]
+
+  // Relations anciens système (conservées pour compatibilité)
+  demandes             DemandePret[]
+  remboursements       Remboursement[]
+  notifications        Notification[]
+  transactions         Transaction[]
+  pushSubscriptions    PushSubscription[]
   notificationSettings NotificationSettings?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  // Nouvelles relations - Groupes solidaires
+  membreGroupes   MembreGroupe[]
+  epargnes        EpargneMensuelle[]
+  paiementMembres PaiementMembre[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
@@ -40,20 +51,307 @@ enum StatutUser {
   SUSPENDU
 }
 
+// ==================== GROUPES SOLIDAIRES ====================
+
+model Groupe {
+  id          String       @id @default(cuid())
+  nom         String
+  description String?
+  statut      StatutGroupe @default(EN_FORMATION)
+
+  // Niveau actuel du groupe
+  niveauActuel NiveauPret @default(BRONZE)
+
+  // Carte de groupe (100 000 FCFA pour accéder au 1er cycle)
+  cartePayee         Boolean @default(false)
+  carteTransactionId String? // Référence vers la transaction de paiement
+
+  // Date de création et validation
+  dateCreation   DateTime  @default(now())
+  dateValidation DateTime? // Date de validation par l'admin
+  validePar      String? // ID de l'admin qui a validé
+
+  // Relations
+  membres      MembreGroupe[]
+  cycles       Cycle[]
+  epargnes     EpargneMensuelle[]
+  transactions TransactionGroupe[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([statut])
+  @@index([niveauActuel])
+}
+
+enum StatutGroupe {
+  EN_FORMATION // Groupe en cours de constitution (moins de 10 membres)
+  COMPLET // 10 membres inscrits, en attente de validation
+  VALIDEE // Validé par l'admin, peut payer la carte
+  ACTIF // Carte payée, cycle en cours
+  SUSPENDU // Groupe suspendu (incident de paiement)
+  DISSOUT // Groupe dissous
+}
+
+enum NiveauPret {
+  BRONZE // 1 000 000 FCFA
+  SILVER // 1 500 000 FCFA
+  GOLD // 2 000 000 FCFA
+  PLATINUM // 2 500 000 FCFA
+  DIAMANT // 3 000 000 FCFA
+}
+
+// ==================== MEMBRES DE GROUPE ====================
+
+model MembreGroupe {
+  id       String @id @default(cuid())
+  groupeId String
+  groupe   Groupe @relation(fields: [groupeId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  // Position dans le groupe (1-10)
+  position Int
+
+  // Chef de groupe (présidente)
+  estChef Boolean @default(false)
+
+  // Statut du membre dans le groupe
+  statut StatutMembre @default(ACTIF)
+
+  dateAdhesion DateTime  @default(now())
+  dateSortie   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupeId, userId])
+  @@unique([groupeId, position])
+  @@index([groupeId])
+}
+
+enum StatutMembre {
+  ACTIF
+  SUSPENDU
+  EXCLU
+  PARTI
+}
+
+// ==================== CYCLES DE PRÊT ====================
+
+model Cycle {
+  id       String @id @default(cuid())
+  groupeId String
+  groupe   Groupe @relation(fields: [groupeId], references: [id], onDelete: Cascade)
+
+  // Niveau et montant du prêt
+  niveau      NiveauPret
+  montantPret Float // Montant total du prêt
+
+  // Période du cycle (10 mois)
+  numeroCycle Int // 1, 2, 3, etc.
+  dateDebut   DateTime
+  dateFin     DateTime // dateDebut + 10 mois
+
+  // Statut du cycle
+  statut StatutCycle @default(EN_ATTENTE)
+
+  // Montants calculés
+  remboursementMensuel Float // montantPret / 10
+  epargneMensuelle     Float // 50 000 FCFA
+  totalMensuel         Float // remboursementMensuel + epargneMensuelle
+
+  // Suivi des paiements
+  moisPayes        Int   @default(0)
+  montantTotalPaye Float @default(0)
+  epargneTotal     Float @default(0)
+
+  // Validation admin
+  validePar      String?
+  dateValidation DateTime?
+
+  // Relations
+  paiements PaiementMensuel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupeId])
+  @@index([statut])
+}
+
+enum StatutCycle {
+  EN_ATTENTE // Cycle créé mais pas encore commencé
+  EN_COURS // Cycle en cours de remboursement
+  TERMINE // Cycle terminé avec succès
+  ANNULE // Cycle annulé
+  DEFAULT // Cycle en défaut de paiement
+}
+
+// ==================== PAIEMENTS MENSUELS ====================
+
+model PaiementMensuel {
+  id      String @id @default(cuid())
+  cycleId String
+  cycle   Cycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  // Mois concerné (1-10)
+  numeroMois   Int
+  dateEcheance DateTime
+
+  // Montants
+  montantRemboursement Float // Part remboursement prêt
+  montantEpargne       Float // Part épargne (5 000 FCFA par membre)
+  montantTotal         Float // Total à payer
+
+  // Paiement effectué
+  montantPaye  Float          @default(0)
+  datePaiement DateTime?
+  statut       StatutPaiement @default(EN_ATTENTE)
+
+  // Transaction associée
+  transactionId String?
+
+  // Membres ayant payé (pour suivi individuel)
+  paiementsMembres PaiementMembre[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cycleId, numeroMois])
+  @@index([cycleId])
+  @@index([statut])
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  PARTIEL
+  PAYE
+  RETARD
+}
+
+// ==================== PAIEMENTS INDIVIDUELS DES MEMBRES ====================
+
+model PaiementMembre {
+  id                String          @id @default(cuid())
+  paiementMensuelId String
+  paiementMensuel   PaiementMensuel @relation(fields: [paiementMensuelId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Montant payé par ce membre
+  montantRemboursement Float
+  montantEpargne       Float
+  montantTotal         Float
+
+  montantPaye  Float          @default(0)
+  datePaiement DateTime?
+  statut       StatutPaiement @default(EN_ATTENTE)
+
+  // Transaction
+  transactionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([paiementMensuelId, userId])
+  @@index([paiementMensuelId])
+}
+
+// ==================== ÉPARGNE MENSUELLE ====================
+
+model EpargneMensuelle {
+  id       String @id @default(cuid())
+  groupeId String
+  groupe   Groupe @relation(fields: [groupeId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Mois et année
+  mois  Int // 1-12
+  annee Int
+
+  // Montant (5 000 FCFA par membre)
+  montantAttendu Float @default(5000)
+  montantVerse   Float @default(0)
+
+  statut       StatutEpargne @default(EN_ATTENTE)
+  datePaiement DateTime?
+
+  // Transaction associée
+  transactionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupeId, userId, mois, annee])
+  @@index([groupeId])
+  @@index([statut])
+}
+
+enum StatutEpargne {
+  EN_ATTENTE
+  VERSE
+  RETARD
+}
+
+// ==================== TRANSACTIONS GROUPE ====================
+
+model TransactionGroupe {
+  id       String @id @default(cuid())
+  groupeId String
+  groupe   Groupe @relation(fields: [groupeId], references: [id])
+
+  type    TypeTransactionGroupe
+  montant Float
+  frais   Float                 @default(0)
+
+  provider          PaymentProvider
+  reference         String            @unique
+  providerReference String?
+  statut            StatutTransaction @default(EN_ATTENTE)
+
+  telephone String
+  message   String?
+
+  // Liens vers d'autres entités
+  cycleId           String?
+  paiementMensuelId String?
+  epargneId         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupeId])
+  @@index([statut])
+}
+
+enum TypeTransactionGroupe {
+  CARTE_GROUPE // Paiement carte 100 000 FCFA
+  REMBOURSEMENT_PRET // Remboursement mensuel du prêt
+  EPARGNE // Versement épargne mensuelle
+  DECAISSEMENT // Versement du prêt au groupe
+  PENALITE // Pénalité pour retard
+}
+
+// ==================== MODÈLES ANCIENS SYSTÈME (CONSERVÉS) ====================
+
 model DemandePret {
-  id              String        @id @default(cuid())
-  userId          String
-  user            User          @relation(fields: [userId], references: [id])
-  typePret        TypePret
-  montant         Float
-  avance          Float         // 10% du montant
-  statut          StatutDemande @default(EN_ATTENTE)
-  membres         Membre[]
-  remboursements  Remboursement[]
-  transactions    Transaction[]
+  id               String          @id @default(cuid())
+  userId           String
+  user             User            @relation(fields: [userId], references: [id])
+  typePret         TypePret
+  montant          Float
+  avance           Float
+  statut           StatutDemande   @default(EN_ATTENTE)
+  membres          Membre[]
+  remboursements   Remboursement[]
+  transactions     Transaction[]
   dateDecaissement DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 }
 
 enum TypePret {
@@ -84,17 +382,17 @@ model Membre {
 }
 
 model Remboursement {
-  id            String       @id @default(cuid())
+  id            String        @id @default(cuid())
   demandePretId String
-  demandePret   DemandePret  @relation(fields: [demandePretId], references: [id])
+  demandePret   DemandePret   @relation(fields: [demandePretId], references: [id])
   userId        String
-  user          User         @relation(fields: [userId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
   montant       Float
   dateEcheance  DateTime
   datePaiement  DateTime?
-  statut        StatutRemb   @default(EN_ATTENTE)
+  statut        StatutRemb    @default(EN_ATTENTE)
   transactions  Transaction[]
-  createdAt     DateTime     @default(now())
+  createdAt     DateTime      @default(now())
 }
 
 enum StatutRemb {
@@ -104,15 +402,15 @@ enum StatutRemb {
 }
 
 model Notification {
-  id          String           @id @default(cuid())
-  userId      String
-  user        User             @relation(fields: [userId], references: [id])
-  type        NotificationType
-  titre       String
-  message     String
-  lu          Boolean          @default(false)
-  lien        String?
-  createdAt   DateTime         @default(now())
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  titre     String
+  message   String
+  lu        Boolean          @default(false)
+  lien      String?
+  createdAt DateTime         @default(now())
 }
 
 enum NotificationType {
@@ -123,27 +421,30 @@ enum NotificationType {
   REMBOURSEMENT
   SYSTEME
   PAIEMENT
+  GROUPE
+  CYCLE
+  EPARGNE
 }
 
 model Transaction {
-  id                String              @id @default(cuid())
+  id                String            @id @default(cuid())
   userId            String
-  user              User                @relation(fields: [userId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
   remboursementId   String?
-  remboursement     Remboursement?      @relation(fields: [remboursementId], references: [id])
+  remboursement     Remboursement?    @relation(fields: [remboursementId], references: [id])
   demandePretId     String?
-  demandePret       DemandePret?        @relation(fields: [demandePretId], references: [id])
+  demandePret       DemandePret?      @relation(fields: [demandePretId], references: [id])
   type              TypeTransaction
   montant           Float
-  frais             Float              @default(0)
+  frais             Float             @default(0)
   provider          PaymentProvider
-  reference         String             @unique
+  reference         String            @unique
   providerReference String?
-  statut            StatutTransaction  @default(EN_ATTENTE)
+  statut            StatutTransaction @default(EN_ATTENTE)
   telephone         String
   message           String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 enum TypeTransaction {
@@ -167,32 +468,30 @@ enum StatutTransaction {
   REMBOURSE
 }
 
-// Push notification subscriptions
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   endpoint  String   @unique
-  p256dh    String   // Public key
-  auth      String   // Auth secret
-  userAgent String?  // Browser info
+  p256dh    String
+  auth      String
+  userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// User notification preferences
 model NotificationSettings {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  user                User     @relation(fields: [userId], references: [id])
-  pushEnabled         Boolean  @default(false)
-  echeanceEnabled     Boolean  @default(true)
-  validationEnabled   Boolean  @default(true)
-  rejetEnabled        Boolean  @default(true)
-  decaissementEnabled Boolean  @default(true)
-  remboursementEnabled Boolean @default(true)
-  paiementEnabled     Boolean  @default(true)
-  systemeEnabled      Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id])
+  pushEnabled          Boolean  @default(false)
+  echeanceEnabled      Boolean  @default(true)
+  validationEnabled    Boolean  @default(true)
+  rejetEnabled         Boolean  @default(true)
+  decaissementEnabled  Boolean  @default(true)
+  remboursementEnabled Boolean  @default(true)
+  paiementEnabled      Boolean  @default(true)
+  systemeEnabled       Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

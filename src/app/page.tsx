@@ -18,7 +18,10 @@ import {
   Menu,
   X,
   Moon,
-  Sun
+  Sun,
+  Medal,
+  Gem,
+  Diamond
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuthStore } from '@/lib/store';
@@ -58,19 +61,19 @@ export default function HomePage() {
       description: "Inscrivez-vous en quelques minutes avec vos informations personnelles"
     },
     {
+      icon: <Users className="h-8 w-8 text-blue-600" />,
+      title: "Rejoignez un groupe",
+      description: "Intégrez un groupe solidaire de 10 femmes"
+    },
+    {
       icon: <Wallet className="h-8 w-8 text-orange-500" />,
-      title: "Choisissez votre prêt",
-      description: "Sélectionnez entre Silver ou Gold selon vos besoins"
+      title: "Payez la carte de groupe",
+      description: "100 000 FCFA pour accéder au premier cycle"
     },
     {
-      icon: <Shield className="h-8 w-8 text-green-600" />,
-      title: "Ajoutez 10 membres",
-      description: "Constituez votre groupe de garant avec 10 membres de confiance"
-    },
-    {
-      icon: <CheckCircle2 className="h-8 w-8 text-orange-500" />,
-      title: "Recevez vos fonds",
-      description: "Après validation, recevez votre prêt rapidement"
+      icon: <CheckCircle2 className="h-8 w-8 text-green-600" />,
+      title: "Recevez votre prêt",
+      description: "Accédez à des prêts de 1M à 3M FCFA sur 10 mois"
     }
   ];
 
@@ -324,95 +327,108 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Nos types de prêts
+              Nos niveaux de financement
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choisissez le prêt adapté à vos besoins
+              5 niveaux progressifs pour accompagner votre croissance
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Silver Card */}
-            <Card className="card-hover border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-gray-300 to-gray-400" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+            {/* Bronze */}
+            <Card className="card-hover border-2 border-amber-600 dark:border-amber-700 overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-amber-600 to-amber-700" />
               <CardHeader className="text-center pb-2">
-                <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mx-auto mb-4 flex items-center justify-center">
-                  <Shield className="h-8 w-8 text-gray-500" />
+                <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 mx-auto mb-2 flex items-center justify-center">
+                  <Medal className="h-6 w-6 text-amber-600" />
                 </div>
-                <CardTitle className="text-2xl">Prêt Silver</CardTitle>
-                <CardDescription>Premier prêt pour démarrer</CardDescription>
+                <CardTitle className="text-lg">Bronze</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center py-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                  <p className="text-3xl font-bold text-gray-600 dark:text-gray-300">1 000 000 FCFA</p>
-                  <p className="text-sm text-muted-foreground">Montant maximum</p>
-                </div>
-                <ul className="space-y-3">
-                  {[
-                    "Conditions d'accès simples",
-                    "Remboursement 100 000 FCFA/mois",
-                    "Frais d'avance 10%",
-                    "Durée jusqu'à 10 mois",
-                    "Accès au prêt Gold après remboursement"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
-                      <span className="text-sm">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button asChild className="w-full bg-gray-600 hover:bg-gray-700">
-                  <Link href={isAuthenticated ? "/demande?type=silver" : "/inscription"}>
-                    Choisir Silver
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+              <CardContent className="text-center">
+                <p className="text-xl font-bold text-amber-600">1 000 000</p>
+                <p className="text-xs text-muted-foreground">FCFA</p>
+                <p className="text-xs mt-2">150 000/mois</p>
               </CardContent>
             </Card>
 
-            {/* Gold Card */}
-            <Card className="card-hover border-2 border-orange-300 dark:border-orange-700 overflow-hidden relative">
-              <div className="absolute top-4 right-4">
-                <Badge className="bg-orange-500 text-white">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  Premium
-                </Badge>
-              </div>
-              <div className="h-2 bg-gradient-to-r from-orange-400 to-yellow-400" />
+            {/* Silver */}
+            <Card className="card-hover border-2 border-gray-300 dark:border-gray-600 overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-gray-300 to-gray-400" />
               <CardHeader className="text-center pb-2">
-                <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 mx-auto mb-4 flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-orange-500" />
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 mx-auto mb-2 flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-gray-500" />
                 </div>
-                <CardTitle className="text-2xl">Prêt Gold</CardTitle>
-                <CardDescription>Pour les membres confirmés</CardDescription>
+                <CardTitle className="text-lg">Silver</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center py-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">3 000 000 FCFA</p>
-                  <p className="text-sm text-muted-foreground">Montant maximum</p>
-                </div>
-                <ul className="space-y-3">
-                  {[
-                    "Réservé aux membres Silver remboursés",
-                    "Remboursement 100 000 FCFA/mois",
-                    "Frais d'avance 10%",
-                    "Durée jusqu'à 30 mois",
-                    "Conditions préférentielles"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
-                      <span className="text-sm">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button asChild className="w-full bg-orange-500 hover:bg-orange-600">
-                  <Link href={isAuthenticated ? "/demande?type=gold" : "/inscription"}>
-                    Choisir Gold
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+              <CardContent className="text-center">
+                <p className="text-xl font-bold text-gray-600">1 500 000</p>
+                <p className="text-xs text-muted-foreground">FCFA</p>
+                <p className="text-xs mt-2">200 000/mois</p>
               </CardContent>
             </Card>
+
+            {/* Gold */}
+            <Card className="card-hover border-2 border-yellow-400 dark:border-yellow-600 overflow-hidden relative">
+              <div className="absolute top-2 right-2">
+                <Badge className="bg-yellow-500 text-white text-xs">Populaire</Badge>
+              </div>
+              <div className="h-2 bg-gradient-to-r from-yellow-400 to-yellow-500" />
+              <CardHeader className="text-center pb-2">
+                <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 mx-auto mb-2 flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-yellow-500" />
+                </div>
+                <CardTitle className="text-lg">Gold</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-xl font-bold text-yellow-600">2 000 000</p>
+                <p className="text-xs text-muted-foreground">FCFA</p>
+                <p className="text-xs mt-2">250 000/mois</p>
+              </CardContent>
+            </Card>
+
+            {/* Platinum */}
+            <Card className="card-hover border-2 border-cyan-300 dark:border-cyan-600 overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-cyan-300 to-cyan-400" />
+              <CardHeader className="text-center pb-2">
+                <div className="w-12 h-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 mx-auto mb-2 flex items-center justify-center">
+                  <Gem className="h-6 w-6 text-cyan-500" />
+                </div>
+                <CardTitle className="text-lg">Platinum</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-xl font-bold text-cyan-600">2 500 000</p>
+                <p className="text-xs text-muted-foreground">FCFA</p>
+                <p className="text-xs mt-2">300 000/mois</p>
+              </CardContent>
+            </Card>
+
+            {/* Diamant */}
+            <Card className="card-hover border-2 border-blue-400 dark:border-blue-600 overflow-hidden relative">
+              <div className="absolute top-2 right-2">
+                <Badge className="bg-blue-500 text-white text-xs">Premium</Badge>
+              </div>
+              <div className="h-2 bg-gradient-to-r from-blue-400 to-blue-500" />
+              <CardHeader className="text-center pb-2">
+                <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mx-auto mb-2 flex items-center justify-center">
+                  <Diamond className="h-6 w-6 text-blue-500" />
+                </div>
+                <CardTitle className="text-lg">Diamant</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-xl font-bold text-blue-600">3 000 000</p>
+                <p className="text-xs text-muted-foreground">FCFA</p>
+                <p className="text-xs mt-2">350 000/mois</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button asChild size="lg" className="bg-green-600 hover:bg-green-700">
+              <Link href={isAuthenticated ? "/groupes" : "/inscription"}>
+                {isAuthenticated ? "Voir les groupes" : "Créer un compte"}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

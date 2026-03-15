@@ -415,6 +415,12 @@ export default function AdminDashboardPage() {
                   Rapports
                 </Button>
               </Link>
+              <Link href="/admin/groupes">
+                <Button variant="ghost" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Groupes
+                </Button>
+              </Link>
               <Link href="/admin/utilisateurs">
                 <Button variant="ghost" size="sm">
                   <Users className="h-4 w-4 mr-2" />
@@ -458,6 +464,12 @@ export default function AdminDashboardPage() {
                   <Button variant="ghost" className="w-full justify-start">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Rapports
+                  </Button>
+                </Link>
+                <Link href="/admin/groupes">
+                  <Button variant="ghost" className="w-full justify-start">
+                    <Users className="h-4 w-4 mr-2" />
+                    Groupes
                   </Button>
                 </Link>
                 <Link href="/admin/utilisateurs">
